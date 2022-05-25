@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package quiz;
+
+option java_package = "org.acme.quiz.grpc";
+option java_multiple_files = true;
+
+import "google/protobuf/empty.proto";
+
+service QuizGrpcService {
+  rpc SignUp(SignUpRequest) returns (SignUpResult);
+  rpc Answer(Solution) returns (SolutionResult);
+  rpc GetRiddles(google.protobuf.Empty) returns (stream Riddle);
+  rpc WatchScore(google.protobuf.Empty) returns (stream Score);
+}
+
+message SolutionResult {
+  enum Result {
+    UNSPECIFIED = 0;
+    OKAY = 1;
+    WRONG = 2;
+    TIMEOUT = 3;
+    DUPLICATE_ANSWER = 4;
+  }
+  Result result = 1;
+}
+
+message UserScore {
+  string user = 1;
+  int32 points = 2;
+}
+message Score {
+  repeated UserScore scores = 1;
+}
+// alt+ctrl+shift+w to refresh
+message Solution {
+  string token = 1;
+  string riddle_id = 2;
+  string solution = 3;
+}
+
+message Riddle {
+  string text = 1;
+  string riddle_id = 2;
+  repeated string responses = 3;
+}
+
+message SignUpRequest {
+  string name = 1;
+}
+
+message SignUpResult {
+  enum Result {
+    OKAY = 0;
+    NAME_ALREADY_USED = 1;
+  }
+  Result result = 1;
+  string token = 2;
+}
