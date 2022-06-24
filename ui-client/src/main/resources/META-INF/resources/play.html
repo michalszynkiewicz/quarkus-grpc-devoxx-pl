@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Quiz-client</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
@@ -10,7 +11,7 @@
 <h1 class="p-4">Quarkus Quiz</h1>
 <div class="container">
     <div class="row p-2">
-        <div class="col-8 p-2">
+        <div class="col-md-8 col-sm-12 p-2">
             <div class="row p-3">
                 <div class="p-2 border bg-light" id="riddle-text">Question</div>
             </div>
@@ -22,8 +23,8 @@
                 </div>
             </div>
         </div>
-        <div class="col-4 p-3 bg-dark bg-gradient text-white">
-            <h4>Ranking</h4>
+        <div class="col-md-4 col-sm-12 p-3 bg-dark bg-gradient text-white">
+            <h4>Top 20</h4>
             <ol id="results">
             </ol>
         </div>
@@ -34,7 +35,7 @@
         crossorigin="anonymous"></script>
 <script>
     let riddle;
-    let token = localStorage.getItem('token');
+    let user = localStorage.getItem('user');
     let answerList = document.getElementById('answer-list');
     let results = document.getElementById('results');
 
@@ -55,7 +56,6 @@
             console.log("adding html: ", html);
             answerList.innerHTML = html;
         }
-        questionSource.onerror = () => questionSource.close();
 
         const resultSource = new EventSource("/game/scores");
         resultSource.onmessage = function(event) {
@@ -71,7 +71,6 @@
             console.log("adding html: ", html);
             results.innerHTML = html;
         }
-        resultSource.onerror = () => resultSource.close();
     }
 
     function selectAnswer(idx, answer) {
@@ -86,9 +85,9 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    "riddleId" : riddle.riddleId,
+                    "question" : riddle.text,
                     "answer": answer,
-                    "token": token
+                    "user": user
                 })
             })
             .then(response => response.json())

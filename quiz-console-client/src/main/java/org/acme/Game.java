@@ -1,15 +1,15 @@
 package org.acme;
 
-import com.google.protobuf.Empty;
 import io.quarkus.grpc.GrpcClient;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
-import org.acme.quiz.grpc.QuizGrpcService;
-import org.acme.quiz.grpc.Riddle;
+import org.acme.quiz.grpc.Answer;
+import org.acme.quiz.grpc.Empty;
+import org.acme.quiz.grpc.Question;
+import org.acme.quiz.grpc.Quiz;
+import org.acme.quiz.grpc.Result;
 import org.acme.quiz.grpc.SignUpRequest;
-import org.acme.quiz.grpc.SignUpResult;
-import org.acme.quiz.grpc.Solution;
-import org.acme.quiz.grpc.SolutionResult;
+import org.acme.quiz.grpc.SignUpResponse;
 import org.acme.quiz.grpc.UserScore;
 
 import java.time.Duration;
@@ -21,9 +21,9 @@ import java.util.List;
 public class Game implements QuarkusApplication {
 
     @GrpcClient
-    QuizGrpcService quizClient;
+    Quiz quizClient;
 
-    volatile Riddle currentRiddle;
+    volatile Question currentQuestion;
 
     @Override
     public int run(String... args) {
@@ -32,16 +32,18 @@ public class Game implements QuarkusApplication {
             return 1;
         }
 
-        String token = signUp(args[0]);
+        String userName = args[0];
+        signUp(userName);
 
-        quizClient.getRiddles(Empty.getDefaultInstance())
+        quizClient.getQuestions(Empty.getDefaultInstance())
                 .subscribe().with(riddle -> {
                     Console.cyan("Riddle: " + riddle.getText());
-                    currentRiddle = riddle;
+                    Console.cyan("Responses: " + String.join(", ", riddle.getAnswersList()));
+                    currentQuestion = riddle;
                 });
         quizClient.watchScore(Empty.getDefaultInstance())
                 .subscribe().with(result -> {
-                    List<UserScore> results = new ArrayList<>(result.getScoresList());
+                    List<UserScore> results = new ArrayList<>(result.getResultsList());
                     results.sort(Comparator.comparing(UserScore::getPoints));
                     Console.white("Results: ");
                     Console.white("======");
@@ -53,15 +55,15 @@ public class Game implements QuarkusApplication {
                 });
 
         while (true) {
-            String resultStr = "";
-            resultStr = System.console().readLine().trim();
-            SolutionResult result = quizClient.answer(
-                            Solution.newBuilder().setSolution(resultStr).setToken(token).setRiddleId(currentRiddle.getRiddleId()).build()
+            String resultStr = System.console().readLine().trim();
+            System.out.println("answering to " + currentQuestion.getAnswersList() + "; " + currentQuestion.getText());
+            Result response = quizClient.respond(
+                            Answer.newBuilder().setText(resultStr).setUser(userName).setQuestion(currentQuestion.getText()).build()
                     )
                     .await().atMost(Duration.ofSeconds(5));
 
-            switch (result.getResult()) {
-                case OKAY:
+            switch (response.getStatus()) {
+                case CORRECT:
                     Console.green("Correct!");
                     Console.white("Please wait for another riddle");
                     break;
@@ -80,13 +82,13 @@ public class Game implements QuarkusApplication {
         }
     }
 
-    private String signUp(String name) {
-        SignUpResult signUpResult = quizClient.signUp(SignUpRequest.newBuilder().setName(name).build())
+    private void signUp(String name) {
+        SignUpResponse signUpResult = quizClient.signUp(SignUpRequest.newBuilder().setName(name).build())
                 .await().atMost(Duration.ofSeconds(20));
-        switch (signUpResult.getResult()) {
+        switch (signUpResult.getStatus()) {
             case OKAY:
-                return signUpResult.getToken();
-            case NAME_ALREADY_USED:
+                break;
+            case NAME_TAKEN:
                 throw new RuntimeException("Name already used, please use a different one");
             default:
                 throw new RuntimeException("Undefined problem");

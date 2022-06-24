@@ -1,13 +1,10 @@
 package org.acme;
 
-import io.quarkus.logging.Log;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.groups.MultiBroadcast;
-import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
-import org.acme.dto.Question;
 import org.acme.dto.JoinDto;
 import org.acme.dto.JoinResponseDto;
+import org.acme.dto.Question;
 import org.acme.dto.ResponseDto;
 import org.acme.dto.Score;
 import org.acme.dto.SolutionResult;
@@ -19,10 +16,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-
 import java.util.List;
-
-import static java.util.Arrays.asList;
 
 @Path("/game")
 public class GameResource {
